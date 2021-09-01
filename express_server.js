@@ -70,6 +70,8 @@ app.post("/urls", (req, res) => {
   res.send("Ok");         // Respond with 'Ok' (we will replace this)
 });
 
+console.log("no changes")
+
 // Delete a generated URL
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];

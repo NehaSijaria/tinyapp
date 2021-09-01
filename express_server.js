@@ -70,6 +70,12 @@ app.post("/urls", (req, res) => {
   res.send("Ok");         // Respond with 'Ok' (we will replace this)
 });
 
+// Delete a generated URL
+app.post("/urls/:id/delete", (req, res) => {
+  delete urlDatabase[req.params.id];
+  res.redirect("/urls");
+});
+
 app.post("/urls/:shortURL", (req, res) => { 
   urlDatabase[req.params.shortURL] = req.body.newURL;
   res.redirect("/urls/" + req.params.shortURL);

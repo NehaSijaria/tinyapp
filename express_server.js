@@ -23,11 +23,11 @@ const urlDatabase = {
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
-
+//1st route: create home-page on the server(Get)
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
-
+//creating database as a string
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
@@ -47,7 +47,7 @@ app.get("/hello", (req, res) => {
 // });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+    res.render("urls_new");
 });
 
 app.get("/urls", (req, res) => {
@@ -56,8 +56,8 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL:" "}; 
-  res.render("urls_show", templateVars);
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
+  res.render("url_show", templateVars);
 });
 
 app.get('/u/:shortURL', (req, res) => {
@@ -74,7 +74,6 @@ app.post("/urls/:shortURL", (req, res) => {
   urlDatabase[req.params.shortURL] = req.body.newURL;
   res.redirect("/urls/" + req.params.shortURL);
 });
-
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);

@@ -2,16 +2,12 @@
   "name": "tinyapp",
   "version": "1.0.0",
   "description": "",
-  "main": "express_server.js",
-  // "scripts": {
-  //   "test": "echo \"Error: no test specified\" && exit 1"
-  // },
-
-  //If we run npm start, our application will run with nodemon! 
+  "main": "index.js",
   "scripts": {
     "start": "./node_modules/.bin/nodemon -L express_server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
-  }
+   },
+ 
   "repository": {
     "type": "git",
     "url": "git+https://github.com/NehaSijaria/tinyapp.git"

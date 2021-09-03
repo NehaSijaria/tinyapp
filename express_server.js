@@ -65,25 +65,31 @@ app.get("/hello", (req, res) => {
 // });
 
 app.get("/urls/new", (req, res) => {
+  const currentUser = req.cookies["user_Id"]
   let templateVars = {
-    username: req.cookies["username"]
+    userId: req.cookies["user_Id"],
+    user: users[currentUser] || null
   };
+
     res.render("urls_new", templateVars);
 });
 
 app.get("/urls", (req, res) => {
+  const currentUser = req.cookies["user_Id"]
   let templateVars = {
-     username: req.cookies["username"],
+     user: users[currentUser] || null,
      urls: urlDatabase 
    };
+   console.log('---------->',templateVars)
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
+  const currentUser = req.cookies["user_Id"]
   const templateVars = { 
     shortURL: req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies["username"]
+    username: users[currentUser] || null
   };
   res.render("urls_show", templateVars);
 });
@@ -95,31 +101,35 @@ app.get('/u/:shortURL', (req, res) => {
 
 // Cookie get login
 app.get("/login", (req, res) => {
+  const currentUser = req.cookies["user_Id"]
   const templateVars = {
-    username: req.cookies["username"],
+    user: users[currentUser],
     urls: []
   };
-  res.render("/urls_index", templateVars);
+  res.render("urls_index", templateVars);
 });
 
 // Cookie login Route
 app.post("/login", (req, res) => { 
-  res.cookie('username', req.body.username).redirect("/urls/");
+  res.cookie('user_Id', req.body.username).redirect("/urls/");
 });
 
 // Register
 app.get("/register", (req, res) => {
   let templateVars = {
-    user: req.cookies["userId"]
+    user: req.cookies["user_Id"]
   };
 
   res.render("urls_register", templateVars);
 });
 // Handeling user's registration
 const findUserByEmail = (email) => {
-  // using the built-in function here => find
- return Object.values(users).find(userObj => userObj.email === email);
-};
+  // using the built-in function here => find */
+ let user =  Object.values(users).find(userObj => userObj.email === email);
+ console.log(email);
+ console.log(user.email);
+//  return user.email;
+  }; 
 
 app.post("/register", (req, res) => { 
   // const {name, email, password} = req.body;
@@ -127,24 +137,25 @@ app.post("/register", (req, res) => {
   const name = req.body.name;
   const email = req.body.email;
   const password = req.body.password;
-  // const registeredEmail = findUserByEmail(email);
-  // if(email === '' || pasword === ''){
-  //   res.send('error')
-  // } else if (email === registeredEmail){
-  //   res.send('400');
-  // }
-  const userId = createUserID();
-
-  const addNewUser = {
-    id: userId,
-    name: name,
-    email: email,
-    password: password
-  };
-
+  const alreadyRegistered = findUserByEmail(email);
+  if(email === '' || password === ''){
+    res.status(403);
+    res.send('Please enter Email ID or Password.');
+  } else if (email === alreadyRegistered){
+    res.status(403);
+    res.send('Already registered.');
+  } 
+    const userId = createUserID();
+    const addNewUser = {
+      id: userId,
+      name: name,
+      email: email,
+      password: password
+    };
+  
   users[userId] = addNewUser;
-  res.cookies("userId", userId);
-  console.log(users);
+  res.cookie("user_Id", userId);
+  console.log('newly created user------------->', users);
   // urlDatabase[req.params.shortURL] = req.body.updatedURL;
   res.redirect("/urls");
 });
@@ -170,7 +181,7 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username").redirect("/urls/");
+  res.clearCookie("user_Id").redirect("/urls/");
 });
 
 app.listen(PORT, () => {

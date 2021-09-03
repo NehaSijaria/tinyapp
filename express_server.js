@@ -4,6 +4,20 @@ const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
 
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk",
+  }
+};
+
+
 const generateRandomString = () => {
     let txt = '';
     let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -31,6 +45,12 @@ app.get("/", (req, res) => {
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
+
+// Register
+app.get("/register", (req, res) => {
+  res.render("urls_register");
+});
+
 
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
@@ -61,24 +81,28 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get('/u/:shortURL', (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]
-  res.redirect(longURL)
-})
+  const longURL = urlDatabase[req.params.shortURL];
+  res.redirect(longURL);
+});
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  // console.log(req.body);  // Log the POST request body to the console
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls/`);         // Respond with 'Ok' (we will replace this)
+  // res.send("OK"); //Change for now
 });
 
 // Delete a generated URL
 app.post("/urls/:id/delete", (req, res) => {
-  delete urlDatabase[req.params.id];
+  const deletedURL = req.params.id;
+  delete urlDatabase[deletedURL];
   res.redirect("/urls");
 });
-
+//edit button
 app.post("/urls/:shortURL", (req, res) => { 
-  urlDatabase[req.params.shortURL] = req.body.newURL;
-  res.redirect("/urls/" + req.params.shortURL);
+  urlDatabase[req.params.shortURL] = req.body.updatedURL;
+  res.redirect("/urls");
 });
 
 app.listen(PORT, () => {

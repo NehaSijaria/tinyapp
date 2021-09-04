@@ -90,23 +90,48 @@ app.get("/urls/new", (req, res) => {
 
 });
 
+const urlsForUser = (id) => {
+  let URLS = {};
+  for (let shortUrl in urlDatabase) {
+    if (id === urlDatabase[shortUrl].userID) {
+      URLS[shortUrl] = urlDatabase[shortUrl];
+    }
+  } 
+  return URLS;
+}
+
+const urlOwnership = (req, res) => {
+  const currentUser = req.cookies["user_Id"];
+  if (!currentUser) {
+    res.send("Please log in.");
+  }
+  if (!urlDatabase[req.params.shortURL]) {
+    res.send("ID doesn't exists.");    
+  }
+  if (urlDatabase[req.params.shortURL].userID !== currentUser) {
+    res.send("You don't have access to the url.");
+  }
+}
+
 app.get("/urls", (req, res) => {
   const currentUser = req.cookies["user_Id"];
+  console.log('------->', urlsForUser(currentUser));
   let templateVars = {
     user: users[currentUser] || null,
-    urls: urlDatabase
+    urls: urlsForUser(currentUser)
   };
   if (currentUser) {
     res.render("urls_index", templateVars);
   } else {
-    res.send ('User is not logged in.');
+    //res.send ('User is not logged in.');
+    res.redirect('/login');
   }
 
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   const currentUser = req.cookies["user_Id"];
-
+  urlOwnership(req, res);
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL].longURL,
@@ -185,13 +210,6 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const alreadyRegistered = findUserByEmail(email);
-
-  if (alreadyRegistered === undefined) {
-    res.status(403);
-    res.send("User not registered. Please register.");
-    // res.redirect("/login");
-  }
-
   if (email === '' || password === '') {
     res.status(403);
     res.send('Please enter Email ID or Password.');
@@ -202,40 +220,52 @@ app.post("/register", (req, res) => {
   } else if (email === alreadyRegistered?.email) {
     res.status(403);
     res.send('Already registered.');
-  } else {
+  } 
 
+  if (alreadyRegistered === undefined) {
+    let userId = createUserID();
+    const addNewUser = {
+      id: userId,
+      name: name,
+      email: email,
+      password: password
   }
-  const userId = createUserID();
-  const addNewUser = {
-    id: userId,
-    name: name,
-    email: email,
-    password: password
-  };
-  
   users[userId] = addNewUser;
   res.cookie("user_Id", userId);
   console.log('newly created user------------->', users);
   // urlDatabase[req.params.shortURL] = req.body.updatedURL;
   res.redirect("/urls");
+}
 });
 
 app.post("/urls", (req, res) => {
-  // console.log(req.body);  // Log the POST request body to the console
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
+  const currentUser = req.cookies["user_Id"];
+  console.log(currentUser);
+  console.log('New url created', req.body);  // Log the POST request body to the console
+  let shortURL = generateRandomString();
+  console.log('Short url created', shortURL);
+
+  const newURL = { 
+    longURL: req.body.longURL, 
+    userID: currentUser
+  }
+  urlDatabase[shortURL] = newURL;
+  console.log(shortURL);
+  console.log('New record added---->', urlDatabase);
   res.redirect(`/urls/`);         // Respond with 'Ok' (we will replace this)
   // res.send("OK"); //Change for now
 });
 
 // Delete a generated URL
 app.post("/urls/:id/delete", (req, res) => {
+  urlOwnership(req, res);
   const deletedURL = req.params.id;
   delete urlDatabase[deletedURL];
   res.redirect("/urls");
 });
 //edit button
 app.post("/urls/:shortURL", (req, res) => {
+  urlOwnership(req, res);
   console.log('---->', req.params.shortURL);
   urlDatabase[req.params.shortURL].longURL = req.body.updatedURL;
   res.redirect("/urls");

@@ -39,9 +39,20 @@ const createUserID = () => {
   return userID;
 };
 
+// const urlDatabase = {
+//   "b2xVn2": "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com"
+// };
+
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "aJ48lW"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "aJ48lW"
+  }
 };
 
 const bodyParser = require("body-parser");
@@ -66,11 +77,17 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const currentUser = req.cookies["user_Id"];
+  if(currentUser === undefined){
+  res.redirect('/login');
+  }
   let templateVars = {
     userId: req.cookies["user_Id"],
     user: users[currentUser] || null
-  };
-  res.render("urls_new", templateVars);
+    }
+    if(currentUser) {
+      res.render("urls_new", templateVars);
+    }
+
 });
 
 app.get("/urls", (req, res) => {
@@ -94,7 +111,8 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get('/u/:shortURL', (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
@@ -130,8 +148,8 @@ app.post("/login", (req, res) => {
   const password = req.body.password;
   const isAlreadyExists = findUserByEmail(email);
   //console.log("users", isAlreadyExists.email);
-  console.log('email: ', email);
-  console.log('Email in user object', isAlreadyExists);
+  //console.log('email: ', email);
+  //console.log('Email in user object', isAlreadyExists);
   if (isAlreadyExists === undefined) {
     res.status(403);
     res.send("User not registered. Please register.");
@@ -152,6 +170,7 @@ app.post("/login", (req, res) => {
     res.status(403);
     res.send("Incorrect email.");
   }
+
 });
 
 app.post("/register", (req, res) => {
@@ -159,6 +178,13 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const alreadyRegistered = findUserByEmail(email);
+
+  if (alreadyRegistered === undefined) {
+    res.status(403);
+    res.send("User not registered. Please register.");
+    // res.redirect("/login");
+  }
+
   if (email === '' || password === '') {
     res.status(403);
     res.send('Please enter Email ID or Password.');
@@ -169,6 +195,8 @@ app.post("/register", (req, res) => {
   } else if (email === alreadyRegistered?.email) {
     res.status(403);
     res.send('Already registered.');
+  } else {
+
   }
   const userId = createUserID();
   const addNewUser = {

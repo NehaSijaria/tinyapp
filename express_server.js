@@ -96,22 +96,29 @@ app.get("/urls", (req, res) => {
     user: users[currentUser] || null,
     urls: urlDatabase
   };
-  console.log('---------->',templateVars);
-  res.render("urls_index", templateVars);
+  if (currentUser) {
+    res.render("urls_index", templateVars);
+  } else {
+    res.send ('User is not logged in.');
+  }
+
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  // const currentUser = req.cookies["user_Id"];
+  const currentUser = req.cookies["user_Id"];
+
   const templateVars = {
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
-    //username: users[currentUser] || null
+    longURL: urlDatabase[req.params.shortURL].longURL,
+    user: users[currentUser] || null
   };
   res.render("urls_show", templateVars);
 });
 
 app.get('/u/:shortURL', (req, res) => {
-  
+ if(!urlDatabase[req.params.shortURL]){
+  res.send('Error Message - Id does not exist');
+ } 
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
@@ -229,7 +236,8 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 //edit button
 app.post("/urls/:shortURL", (req, res) => {
-  urlDatabase[req.params.shortURL] = req.body.updatedURL;
+  console.log('---->', req.params.shortURL);
+  urlDatabase[req.params.shortURL].longURL = req.body.updatedURL;
   res.redirect("/urls");
 });
 

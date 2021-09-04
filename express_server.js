@@ -162,7 +162,11 @@ app.post("/register", (req, res) => {
   if (email === '' || password === '') {
     res.status(403);
     res.send('Please enter Email ID or Password.');
-  } else if (email === alreadyRegistered.email) {
+    // alreadyRegistered could be object or it could be undefined
+    // how do you check if a variable called 'alreadyRegistered' is undefined or not?
+    // if undefined === undefined?
+    // mdn safe operator
+  } else if (email === alreadyRegistered?.email) {
     res.status(403);
     res.send('Already registered.');
   }

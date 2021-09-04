@@ -11,13 +11,13 @@ const users = {
     id: "userRandomID", 
     name: "Sam",
     email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    password: "test1"
   },
  "user2RandomID": {
     id: "user2RandomID", 
     name: "Carol",
     email: "user2@example.com", 
-    password: "dishwasher-funk",
+    password: "test2",
   }
 };
 
@@ -89,7 +89,7 @@ app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { 
     shortURL: req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL],
-    username: users[currentUser] || null
+    //username: users[currentUser] || null
   };
   res.render("urls_show", templateVars);
 });
@@ -106,12 +106,7 @@ app.get("/login", (req, res) => {
     user: users[currentUser],
     urls: []
   };
-  res.render("urls_index", templateVars);
-});
-
-// Cookie login Route
-app.post("/login", (req, res) => { 
-  res.cookie('user_Id', req.body.username).redirect("/urls/");
+  res.render("urls_login", templateVars);
 });
 
 // Register
@@ -126,14 +121,35 @@ app.get("/register", (req, res) => {
 const findUserByEmail = (email) => {
   // using the built-in function here => find */
  let user =  Object.values(users).find(userObj => userObj.email === email);
- console.log(email);
- console.log(user.email);
-//  return user.email;
+  return user;
   }; 
 
+
+// New Cookie login Route
+app.post("/login", (req, res) => { 
+  const email = req.body.email;
+  const password = req.body.password;
+  const isAlreadyExists = findUserByEmail(email);
+  //console.log("users", isAlreadyExists.email);
+
+  console.log('email: ', email);
+    if (email === isAlreadyExists.email) {
+      if (password !== isAlreadyExists.password ) {
+        res.status(403);
+        res.send("Incorrect Password.");      
+      } else {
+        // res.send("OK");
+        res.cookie("user_Id", isAlreadyExists.id);
+        res.redirect("/urls");
+        // res.cookie('user_Id', currentUser).redirect("/urls/");
+      }
+    } else {
+      res.status(403);
+      res.send("Incorrect email.");
+  }
+});
+
 app.post("/register", (req, res) => { 
-  // const {name, email, password} = req.body;
-  // console.log(req.body);
   const name = req.body.name;
   const email = req.body.email;
   const password = req.body.password;
@@ -181,7 +197,8 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_Id").redirect("/urls/");
+  res.clearCookie("user_Id").redirect("/login");
+  //
 });
 
 app.listen(PORT, () => {

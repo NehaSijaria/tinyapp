@@ -6,38 +6,38 @@ const cookieParser = require('cookie-parser');
 app.set("view engine", "ejs");
 app.use(cookieParser());
 
-const users = { 
+const users = {
   "userRandomID": {
-    id: "userRandomID", 
+    id: "userRandomID",
     name: "Sam",
-    email: "user@example.com", 
+    email: "user@example.com",
     password: "test1"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
+  "user2RandomID": {
+    id: "user2RandomID",
     name: "Carol",
-    email: "user2@example.com", 
+    email: "user2@example.com",
     password: "test2",
   }
 };
 
 
 const generateRandomString = () => {
-    let txt = '';
-    let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let charactersLength = characters.length;
-    for (let i = 0; i < charactersLength; i++) {
-      txt += characters.charAt(Math.floor(Math.random() *
+  let txt = '';
+  let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let charactersLength = characters.length;
+  for (let i = 0; i < charactersLength; i++) {
+    txt += characters.charAt(Math.floor(Math.random() *
         charactersLength));
   
-    }
-    return txt.substring(0, 6);
-  };
+  }
+  return txt.substring(0, 6);
+};
 
-  const createUserID = () => {
-    const userID = Math.random().toString(36).substring(2, 8); // Generating random unique user id
-    return userID;
-  };
+const createUserID = () => {
+  const userID = Math.random().toString(36).substring(2, 8); // Generating random unique user id
+  return userID;
+};
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -65,29 +65,28 @@ app.get("/hello", (req, res) => {
 // });
 
 app.get("/urls/new", (req, res) => {
-  const currentUser = req.cookies["user_Id"]
+  const currentUser = req.cookies["user_Id"];
   let templateVars = {
     userId: req.cookies["user_Id"],
     user: users[currentUser] || null
   };
-
-    res.render("urls_new", templateVars);
+  res.render("urls_new", templateVars);
 });
 
 app.get("/urls", (req, res) => {
-  const currentUser = req.cookies["user_Id"]
+  const currentUser = req.cookies["user_Id"];
   let templateVars = {
-     user: users[currentUser] || null,
-     urls: urlDatabase 
-   };
-   console.log('---------->',templateVars)
+    user: users[currentUser] || null,
+    urls: urlDatabase
+  };
+  console.log('---------->',templateVars);
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const currentUser = req.cookies["user_Id"]
-  const templateVars = { 
-    shortURL: req.params.shortURL, 
+  // const currentUser = req.cookies["user_Id"];
+  const templateVars = {
+    shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
     //username: users[currentUser] || null
   };
@@ -101,7 +100,7 @@ app.get('/u/:shortURL', (req, res) => {
 
 // Cookie get login
 app.get("/login", (req, res) => {
-  const currentUser = req.cookies["user_Id"]
+  const currentUser = req.cookies["user_Id"];
   const templateVars = {
     user: users[currentUser],
     urls: []
@@ -120,54 +119,60 @@ app.get("/register", (req, res) => {
 // Handeling user's registration
 const findUserByEmail = (email) => {
   // using the built-in function here => find */
- let user =  Object.values(users).find(userObj => userObj.email === email);
+  let user =  Object.values(users).find(userObj => userObj.email === email);
   return user;
-  }; 
+};
 
 
 // New Cookie login Route
-app.post("/login", (req, res) => { 
+app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const isAlreadyExists = findUserByEmail(email);
   //console.log("users", isAlreadyExists.email);
-
   console.log('email: ', email);
-    if (email === isAlreadyExists.email) {
-      if (password !== isAlreadyExists.password ) {
-        res.status(403);
-        res.send("Incorrect Password.");      
-      } else {
-        // res.send("OK");
-        res.cookie("user_Id", isAlreadyExists.id);
-        res.redirect("/urls");
-        // res.cookie('user_Id', currentUser).redirect("/urls/");
-      }
-    } else {
+  console.log('Email in user object', isAlreadyExists);
+  if (isAlreadyExists === undefined) {
+    res.status(403);
+    res.send("User not registered. Please register.");
+    // res.redirect("/login");
+  }
+
+  if (email === isAlreadyExists.email) {
+    if (password !== isAlreadyExists.password) {
       res.status(403);
-      res.send("Incorrect email.");
+      res.send("Incorrect Password.");
+    } else {
+      // res.send("OK");
+      res.cookie("user_Id", isAlreadyExists.id);
+      res.redirect("/urls");
+      // res.cookie('user_Id', currentUser).redirect("/urls/");
+    }
+  } else {
+    res.status(403);
+    res.send("Incorrect email.");
   }
 });
 
-app.post("/register", (req, res) => { 
+app.post("/register", (req, res) => {
   const name = req.body.name;
   const email = req.body.email;
   const password = req.body.password;
   const alreadyRegistered = findUserByEmail(email);
-  if(email === '' || password === ''){
+  if (email === '' || password === '') {
     res.status(403);
     res.send('Please enter Email ID or Password.');
-  } else if (email === alreadyRegistered){
+  } else if (email === alreadyRegistered.email) {
     res.status(403);
     res.send('Already registered.');
-  } 
-    const userId = createUserID();
-    const addNewUser = {
-      id: userId,
-      name: name,
-      email: email,
-      password: password
-    };
+  }
+  const userId = createUserID();
+  const addNewUser = {
+    id: userId,
+    name: name,
+    email: email,
+    password: password
+  };
   
   users[userId] = addNewUser;
   res.cookie("user_Id", userId);
@@ -191,7 +196,7 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls");
 });
 //edit button
-app.post("/urls/:shortURL", (req, res) => { 
+app.post("/urls/:shortURL", (req, res) => {
   urlDatabase[req.params.shortURL] = req.body.updatedURL;
   res.redirect("/urls");
 });

@@ -1,26 +1,31 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require('cookie-parser');
-const bcrypt = require('bcrypt');
-const password = "purple-monkey-dinosaur"; // found in the req.params object
-const hashedPassword = bcrypt.hashSync(password, 10);
+// const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
+ const bcrypt = require('bcrypt');
+
+
+app.use(cookieSession({ 
+  name: "session",
+  keys: ["key1" , "key2"]
+}));
 
 app.set("view engine", "ejs");
-app.use(cookieParser());
+// app.use(cookieParser());
 
 const users = {
   "userRandomID": {
     id: "userRandomID",
     name: "Sam",
     email: "user@example.com",
-    password: "test1"
+    password: "$2b$10$1vD0wzAEVp7WlvcgNAgJeOxhx8H31lbOLeXTITSgPNdVlucAOtcfC"
   },
   "user2RandomID": {
     id: "user2RandomID",
     name: "Carol",
     email: "user2@example.com",
-    password: "test2",
+    password: "$2b$10$1vD0wzAEVp7WlvcgNAgJeOxhx8H31lbOLeXTITSgPNdVlucAOtcfC",
   }
 };
 
@@ -79,12 +84,14 @@ app.get("/hello", (req, res) => {
 // });
 
 app.get("/urls/new", (req, res) => {
-  const currentUser = req.cookies["user_Id"];
+  // const currentUser = req.cookies["user_Id"];
+  const currentUser = req.session.user_Id;
   if(currentUser === undefined){
   res.redirect('/login');
   }
   let templateVars = {
-    userId: req.cookies["user_Id"],
+    userId: currentUser,
+    // userId: req.session["user_Id"],
     user: users[currentUser] || null
     }
     if(currentUser) {
@@ -104,7 +111,8 @@ const urlsForUser = (id) => {
 }
 
 const urlOwnership = (req, res) => {
-  const currentUser = req.cookies["user_Id"];
+  // const currentUser = req.cookies["user_Id"];
+  const currentUser = req.session.user_Id;
   if (!currentUser) {
     res.send("Please log in.");
   }
@@ -117,8 +125,9 @@ const urlOwnership = (req, res) => {
 }
 
 app.get("/urls", (req, res) => {
-  const currentUser = req.cookies["user_Id"];
-  console.log('------->', urlsForUser(currentUser));
+  // const currentUser = req.cookies["user_Id"];
+  const currentUser = req.session.user_Id;
+  console.log('------->', currentUser);
   let templateVars = {
     user: users[currentUser] || null,
     urls: urlsForUser(currentUser)
@@ -133,7 +142,8 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const currentUser = req.cookies["user_Id"];
+  // const currentUser = req.cookies["user_Id"];
+  const currentUser = req.session.user_Id;;
   urlOwnership(req, res);
   const templateVars = {
     shortURL: req.params.shortURL,
@@ -153,18 +163,20 @@ app.get('/u/:shortURL', (req, res) => {
 
 // Cookie get login
 app.get("/login", (req, res) => {
-  const currentUser = req.cookies["user_Id"];
+  // const currentUser = req.cookies["user_Id"];
+  const currentUser = req.session["user_Id"];
   const templateVars = {
     user: users[currentUser],
     urls: []
-  };
+  };  
   res.render("urls_login", templateVars);
 });
 
 // Register
 app.get("/register", (req, res) => {
   let templateVars = {
-    user: req.cookies["user_Id"]
+    // user: req.cookies["user_Id"]
+    user: req.session["user_Id"]
   };
 
   res.render("urls_register", templateVars);
@@ -180,12 +192,16 @@ const findUserByEmail = (email) => {
 // New Cookie login Route
 app.post("/login", (req, res) => {
   const email = req.body.email;
-  // const password = req.body.password;
-  const password = bcrypt.hashSync(req.body.password, 10);
+  const password = req.body.password;
+  
+  // console.log('----> email', email);
+  // console.log('----> password', password);
   const isAlreadyExists = findUserByEmail(email);
+  console.log('Email in user object', isAlreadyExists);
+
   //console.log("users", isAlreadyExists.email);
   //console.log('email: ', email);
-  //console.log('Email in user object', isAlreadyExists);
+
   if (isAlreadyExists === undefined) {
     res.status(403);
     res.send("User not registered. Please register.");
@@ -193,12 +209,16 @@ app.post("/login", (req, res) => {
   }
 
   if (email === isAlreadyExists.email) {
-    if (bcrypt.compareSync(password, hashedPassword) !== bcrypt.compareSync(isAlreadyExists.password, hashedPassword)) {
+    // if (password !== isAlreadyExists.password) {
+      if(!bcrypt.compareSync(password, isAlreadyExists.password)){
       res.status(403);
       res.send("Incorrect Password.");
     } else {
       // res.send("OK");
-      res.cookie("user_Id", isAlreadyExists.id);
+      // res.cookie("user_Id", isAlreadyExists.id);
+      req.session.user_Id = isAlreadyExists.id;
+      // console.log("---->Password Matched");
+      // console.log(isAlreadyExists.id);
       res.redirect("/urls");
       // res.cookie('user_Id', currentUser).redirect("/urls/");
     }
@@ -236,7 +256,8 @@ app.post("/register", (req, res) => {
       password: password
   }
   users[userId] = addNewUser;
-  res.cookie("user_Id", userId);
+  // res.cookie("user_Id", userId);
+  req.session.user_Id = userId;
   console.log('newly created user------------->', users);
   // urlDatabase[req.params.shortURL] = req.body.updatedURL;
   res.redirect("/urls");
@@ -244,7 +265,9 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const currentUser = req.cookies["user_Id"];
+  // const currentUser = req.cookies["user_Id"];
+  const currentUser = req.session['user_Id'];
+  console.log('--->current user', currentUser);
   console.log(currentUser);
   console.log('New url created', req.body);  // Log the POST request body to the console
   let shortURL = generateRandomString();
@@ -277,8 +300,11 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_Id").redirect("/login");
-  //
+  // res.clearCookie("user_Id").redirect("/login");
+
+  req.session = null;
+  res.redirect("/login");
+  
 });
 
 app.listen(PORT, () => {

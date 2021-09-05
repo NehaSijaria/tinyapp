@@ -2,9 +2,10 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require('cookie-parser');
-const bcrypt = require('bcrypt');
-const password = "purple-monkey-dinosaur"; // found in the req.params object
-const hashedPassword = bcrypt.hashSync(password, 10);
+// const bcrypt = require('bcrypt');
+// const password = "purple-monkey-dinosaur"; // found in the req.params object
+// const hashedPassword = bcrypt.hashSync(password, 10);
+const getUserByEmail = require('./helpers');
 
 app.set("view engine", "ejs");
 app.use(cookieParser());
@@ -180,8 +181,8 @@ const findUserByEmail = (email) => {
 // New Cookie login Route
 app.post("/login", (req, res) => {
   const email = req.body.email;
-  // const password = req.body.password;
-  const password = bcrypt.hashSync(req.body.password, 10);
+  const password = req.body.password;
+  // const password = bcrypt.hashSync(req.body.password, 10);
   const isAlreadyExists = findUserByEmail(email);
   //console.log("users", isAlreadyExists.email);
   //console.log('email: ', email);
@@ -193,7 +194,8 @@ app.post("/login", (req, res) => {
   }
 
   if (email === isAlreadyExists.email) {
-    if (bcrypt.compareSync(password, hashedPassword) !== bcrypt.compareSync(isAlreadyExists.password, hashedPassword)) {
+    if(password !== isAlreadyExists.password){
+    // if (bcrypt.compareSync(password, hashedPassword) !== bcrypt.compareSync(isAlreadyExists.password, hashedPassword)) {
       res.status(403);
       res.send("Incorrect Password.");
     } else {
@@ -212,8 +214,8 @@ app.post("/login", (req, res) => {
 app.post("/register", (req, res) => {
   const name = req.body.name;
   const email = req.body.email;
-  // const password = req.body.password;
-  const password = bcrypt.hashSync(req.body.password, 10);
+  const password = req.body.password;
+  // const password = bcrypt.hashSync(req.body.password, 10);
   const alreadyRegistered = findUserByEmail(email);
   if (email === '' || password === '') {
     res.status(403);

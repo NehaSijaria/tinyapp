@@ -1,20 +1,19 @@
 const { assert } = require('chai');
 
 const  getUserByEmail  = require('../helpers.js');
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
-//const cookieSession = require('cookie-session');
+
+const cookieSession = require('cookie-session');
 
 const testUsers = {
   "userRandomID": {
     id: "userRandomID", 
     email: "user@example.com", 
-    password: "test1"
+    password: "$2b$10$1vD0wzAEVp7WlvcgNAgJeOxhx8H31lbOLeXTITSgPNdVlucAOtcfC"
   },
   "user2RandomID": {
     id: "user2RandomID", 
     email: "user2@example.com", 
-    password: "test2"
+    password: "$2b$10$1vD0wzAEVp7WlvcgNAgJeOxhx8H31lbOLeXTITSgPNdVlucAOtcfC"
   }
 };
 

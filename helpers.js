@@ -1,3 +1,4 @@
+
 const getUserByEmail = (email, database) => {
 
   let user;
@@ -8,6 +9,6 @@ const getUserByEmail = (email, database) => {
   }
   return user;
 
- };
+};
 
- module.exports = getUserByEmail;
+module.exports = getUserByEmail;

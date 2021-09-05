@@ -232,8 +232,8 @@ app.post("/login", (req, res) => {
 app.post("/register", (req, res) => {
   const name = req.body.name;
   const email = req.body.email;
-  // const password = req.body.password;
-  const password = bcrypt.hashSync(req.body.password, 10);
+  const password = req.body.password;
+  // const password = bcrypt.hashSync(req.body.password, 10);
   const alreadyRegistered = findUserByEmail(email);
   if (email === '' || password === '') {
     res.status(403);

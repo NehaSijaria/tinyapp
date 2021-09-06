@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-// const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 
@@ -12,7 +11,6 @@ app.use(cookieSession({
 }));
 
 app.set("view engine", "ejs");
-// app.use(cookieParser());
 
 const users = {
   "userRandomID": {
@@ -47,11 +45,6 @@ const createUserID = () => {
   return userID;
 };
 
-// const urlDatabase = {
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com"
-// };
-
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
@@ -79,19 +72,13 @@ app.get("/hello", (req, res) => {
   res.render("hello_world", templateVars);
 });
 
-// app.get("/hello", (req, res) => {
-//   res.send("<html><body>Hello <b>World</b></body></html>\n");
-// });
-
 app.get("/urls/new", (req, res) => {
-  // const currentUser = req.cookies["user_Id"];
   const currentUser = req.session.user_Id;
   if (currentUser === undefined) {
     res.redirect('/login');
   }
   let templateVars = {
     userId: currentUser,
-    // userId: req.session["user_Id"],
     user: users[currentUser] || null
   };
   if (currentUser) {
@@ -111,7 +98,6 @@ const urlsForUser = (id) => {
 };
 
 const urlOwnership = (req, res) => {
-  // const currentUser = req.cookies["user_Id"];
   const currentUser = req.session.user_Id;
   if (!currentUser) {
     res.send("Please log in.");
@@ -125,7 +111,6 @@ const urlOwnership = (req, res) => {
 };
 
 app.get("/urls", (req, res) => {
-  // const currentUser = req.cookies["user_Id"];
   const currentUser = req.session.user_Id;
   console.log('------->', currentUser);
   let templateVars = {
@@ -135,14 +120,12 @@ app.get("/urls", (req, res) => {
   if (currentUser) {
     res.render("urls_index", templateVars);
   } else {
-    //res.send ('User is not logged in.');
-    res.redirect('/login');
+    res.send ('User is not logged in.');
+    // res.redirect('/login');
   }
-
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  // const currentUser = req.cookies["user_Id"];
   const currentUser = req.session.user_Id;
   urlOwnership(req, res);
   const templateVars = {
@@ -163,7 +146,6 @@ app.get('/u/:shortURL', (req, res) => {
 
 // Cookie get login
 app.get("/login", (req, res) => {
-  // const currentUser = req.cookies["user_Id"];
   const currentUser = req.session["user_Id"];
   const templateVars = {
     user: users[currentUser],
@@ -175,7 +157,6 @@ app.get("/login", (req, res) => {
 // Register
 app.get("/register", (req, res) => {
   let templateVars = {
-    // user: req.cookies["user_Id"]
     user: req.session["user_Id"]
   };
 
@@ -183,58 +164,52 @@ app.get("/register", (req, res) => {
 });
 // Handeling user's registration
 const findUserByEmail = (email) => {
-  // using the built-in function here => find */
   let user =  Object.values(users).find(userObj => userObj.email === email);
   return user;
 };
-
-
-// New Cookie login Route
+// Login Route 
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  
-  // console.log('----> email', email);
-  // console.log('----> password', password);
   const isAlreadyExists = findUserByEmail(email);
   console.log('Email in user object', isAlreadyExists);
-
-  //console.log("users", isAlreadyExists.email);
-  //console.log('email: ', email);
-
   if (isAlreadyExists === undefined) {
     res.status(403);
     res.send("User not registered. Please register.");
-    // res.redirect("/login");
   }
 
   if (email === isAlreadyExists.email) {
-    // if (password !== isAlreadyExists.password) {
     if (!bcrypt.compareSync(password, isAlreadyExists.password)) {
       res.status(403);
       res.send("Incorrect Password.");
     } else {
-      // res.send("OK");
-      // res.cookie("user_Id", isAlreadyExists.id);
       req.session.user_Id = isAlreadyExists.id;
-      // console.log("---->Password Matched");
-      // console.log(isAlreadyExists.id);
       res.redirect("/urls");
-      // res.cookie('user_Id', currentUser).redirect("/urls/");
     }
   } else {
     res.status(403);
     res.send("Incorrect email.");
   }
-
 });
 
 app.post("/register", (req, res) => {
   const name = req.body.name;
   const email = req.body.email;
-  const password = req.body.password;
-  // const password = bcrypt.hashSync(req.body.password, 10);
+  // const password = req.body.password;
+  const password = bcrypt.hashSync(req.body.password, 10);
   const alreadyRegistered = findUserByEmail(email);
+  if (alreadyRegistered === undefined) {
+    let userId = createUserID();
+    const addNewUser = {
+      id: userId,
+      email: email,
+      password: password
+    };
+    users[userId] = addNewUser;
+    req.session.user_Id = userId;
+    console.log('newly created user------------->', users);
+    res.redirect("/urls");
+  } 
   if (email === '' || password === '') {
     res.status(403);
     res.send('Please enter Email ID or Password.');
@@ -242,46 +217,22 @@ app.post("/register", (req, res) => {
     // how do you check if a variable called 'alreadyRegistered' is undefined or not?
     // if undefined === undefined?
     // mdn safe operator
-  } else if (email === alreadyRegistered.email) {
+  } else if (email === alreadyRegistered?.email) {
+    console.log('-------->', alreadyRegistered);
     res.status(403);
     res.send('Already registered.');
-  }
-
-  if (alreadyRegistered === undefined) {
-    let userId = createUserID();
-    const addNewUser = {
-      id: userId,
-      name: name,
-      email: email,
-      password: password
-    };
-    users[userId] = addNewUser;
-    // res.cookie("user_Id", userId);
-    req.session.user_Id = userId;
-    console.log('newly created user------------->', users);
-    // urlDatabase[req.params.shortURL] = req.body.updatedURL;
-    res.redirect("/urls");
   }
 });
 
 app.post("/urls", (req, res) => {
-  // const currentUser = req.cookies["user_Id"];
   const currentUser = req.session['user_Id'];
-  console.log('--->current user', currentUser);
-  console.log(currentUser);
-  console.log('New url created', req.body);  // Log the POST request body to the console
   let shortURL = generateRandomString();
-  console.log('Short url created', shortURL);
-
   const newURL = {
     longURL: req.body.longURL,
     userID: currentUser
   };
   urlDatabase[shortURL] = newURL;
-  console.log(shortURL);
-  console.log('New record added---->', urlDatabase);
   res.redirect(`/urls/`);         // Respond with 'Ok' (we will replace this)
-  // res.send("OK"); //Change for now
 });
 
 // Delete a generated URL
@@ -300,8 +251,6 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  // res.clearCookie("user_Id").redirect("/login");
-
   req.session = null;
   res.redirect("/login");
   

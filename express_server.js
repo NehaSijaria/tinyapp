@@ -27,6 +27,16 @@ const users = {
   }
 };
 
+const urlDatabase = {
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW"
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW"
+  }
+};
 
 const generateRandomString = () => {
   let txt = '';
@@ -45,14 +55,32 @@ const createUserID = () => {
   return userID;
 };
 
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW"
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW"
+// Handeling user's registration
+const findUserByEmail = (email) => {
+  let user =  Object.values(users).find(userObj => userObj.email === email);
+  return user;
+};
+
+const urlsForUser = (id) => {
+  let URLS = {};
+  for (let shortUrl in urlDatabase) {
+    if (id === urlDatabase[shortUrl].userID) {
+      URLS[shortUrl] = urlDatabase[shortUrl];
+    }
+  }
+  return URLS;
+};
+
+const urlOwnership = (req, res) => {
+  const currentUser = req.session.user_Id;
+  if (!currentUser) {
+    res.send("Please log in.");
+  }
+  if (!urlDatabase[req.params.shortURL]) {
+    res.send("ID doesn't exists.");
+  }
+  if (urlDatabase[req.params.shortURL].userID !== currentUser) {
+    res.send("You don't have access to the url.");
   }
 };
 
@@ -86,29 +114,6 @@ app.get("/urls/new", (req, res) => {
   }
 
 });
-
-const urlsForUser = (id) => {
-  let URLS = {};
-  for (let shortUrl in urlDatabase) {
-    if (id === urlDatabase[shortUrl].userID) {
-      URLS[shortUrl] = urlDatabase[shortUrl];
-    }
-  }
-  return URLS;
-};
-
-const urlOwnership = (req, res) => {
-  const currentUser = req.session.user_Id;
-  if (!currentUser) {
-    res.send("Please log in.");
-  }
-  if (!urlDatabase[req.params.shortURL]) {
-    res.send("ID doesn't exists.");
-  }
-  if (urlDatabase[req.params.shortURL].userID !== currentUser) {
-    res.send("You don't have access to the url.");
-  }
-};
 
 app.get("/urls", (req, res) => {
   const currentUser = req.session.user_Id;
@@ -162,11 +167,7 @@ app.get("/register", (req, res) => {
 
   res.render("urls_register", templateVars);
 });
-// Handeling user's registration
-const findUserByEmail = (email) => {
-  let user =  Object.values(users).find(userObj => userObj.email === email);
-  return user;
-};
+
 // Login Route 
 app.post("/login", (req, res) => {
   const email = req.body.email;

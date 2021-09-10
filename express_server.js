@@ -12,6 +12,9 @@ app.use(cookieSession({
 
 app.set("view engine", "ejs");
 
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({extended: true}));
+
 const users = {
   "userRandomID": {
     id: "userRandomID",
@@ -38,6 +41,7 @@ const urlDatabase = {
   }
 };
 
+
 const generateRandomString = () => {
   let txt = '';
   let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -45,14 +49,8 @@ const generateRandomString = () => {
   for (let i = 0; i < charactersLength; i++) {
     txt += characters.charAt(Math.floor(Math.random() *
         charactersLength));
-  
   }
   return txt.substring(0, 6);
-};
-
-const createUserID = () => {
-  const userID = Math.random().toString(36).substring(2, 8); // Generating random unique user id
-  return userID;
 };
 
 // Handeling user's registration
@@ -77,15 +75,15 @@ const urlOwnership = (req, res) => {
     res.send("Please log in.");
   }
   if (!urlDatabase[req.params.shortURL]) {
-    res.send("ID doesn't exists.");
+    
+    return res.send("ID doesn't exists.");
   }
   if (urlDatabase[req.params.shortURL].userID !== currentUser) {
     res.send("You don't have access to the url.");
   }
 };
 
-const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({extended: true}));
+
 //1st route: create home-page on the server(Get)
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -102,13 +100,13 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const currentUser = req.session.user_Id;
-  if (currentUser === undefined) {
-    res.redirect('/login');
-  }
   let templateVars = {
     userId: currentUser,
     user: users[currentUser] || null
   };
+    if (currentUser === undefined || currentUser === null) {
+    res.redirect('/login');
+  }
   if (currentUser) {
     res.render("urls_new", templateVars);
   }
@@ -117,7 +115,6 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const currentUser = req.session.user_Id;
-  console.log('------->', currentUser);
   let templateVars = {
     user: users[currentUser] || null,
     urls: urlsForUser(currentUser)
@@ -173,7 +170,6 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const isAlreadyExists = findUserByEmail(email);
-  console.log('Email in user object', isAlreadyExists);
   if (isAlreadyExists === undefined) {
     res.status(403);
     res.send("User not registered. Please register.");
@@ -200,7 +196,7 @@ app.post("/register", (req, res) => {
   const password = bcrypt.hashSync(req.body.password, 10);
   const alreadyRegistered = findUserByEmail(email);
   if (alreadyRegistered === undefined) {
-    let userId = createUserID();
+    let userId = generateRandomString();
     const addNewUser = {
       id: userId,
       email: email,
@@ -208,7 +204,6 @@ app.post("/register", (req, res) => {
     };
     users[userId] = addNewUser;
     req.session.user_Id = userId;
-    console.log('newly created user------------->', users);
     res.redirect("/urls");
   } 
   if (email === '' || password === '') {
@@ -219,7 +214,6 @@ app.post("/register", (req, res) => {
     // if undefined === undefined?
     // mdn safe operator
   } else if (email === alreadyRegistered?.email) {
-    console.log('-------->', alreadyRegistered);
     res.status(403);
     res.send('Already registered.');
   }
@@ -238,15 +232,26 @@ app.post("/urls", (req, res) => {
 
 // Delete a generated URL
 app.post("/urls/:id/delete", (req, res) => {
-  urlOwnership(req, res);
-  const deletedURL = req.params.id;
-  delete urlDatabase[deletedURL];
+  const currentUser = req.session.user_Id;
+  if (!currentUser) {
+    return res.send("Please log in.");
+  }
+  const shortURL = req.params.id;
+  const urlObj = urlDatabase[shortURL];
+  if (!urlObj) {
+    return res.send("ShortURL doesnot exist.");
+  } 
+  if (currentUser !== urlObj.userID) {
+    return res.send("User does't have permission to access to the url.");
+  }
+  // urlOwnership(req, res);
+  // const deletedURL = req.params.id;
+  delete urlDatabase[shortURL];
   res.redirect("/urls");
 });
 //edit button
 app.post("/urls/:shortURL", (req, res) => {
   urlOwnership(req, res);
-  console.log('---->', req.params.shortURL);
   urlDatabase[req.params.shortURL].longURL = req.body.updatedURL;
   res.redirect("/urls");
 });

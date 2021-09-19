@@ -41,11 +41,10 @@ const urlDatabase = {
   }
 };
 
-
 const generateRandomString = () => {
   let txt = '';
-  let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let charactersLength = characters.length;
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
   for (let i = 0; i < charactersLength; i++) {
     txt += characters.charAt(Math.floor(Math.random() *
         charactersLength));
@@ -55,7 +54,7 @@ const generateRandomString = () => {
 
 // Handeling user's registration
 const findUserByEmail = (email) => {
-  let user =  Object.values(users).find(userObj => userObj.email === email);
+  const user =  Object.values(users).find(userObj => userObj.email === email);
   return user;
 };
 
@@ -72,21 +71,26 @@ const urlsForUser = (id) => {
 const urlOwnership = (req, res) => {
   const currentUser = req.session.user_Id;
   if (!currentUser) {
-    res.send("Please log in.");
+    return res.send("Please log in.");
   }
   if (!urlDatabase[req.params.shortURL]) {
-    
     return res.send("ID doesn't exists.");
   }
   if (urlDatabase[req.params.shortURL].userID !== currentUser) {
-    res.send("You don't have access to the url.");
+    return res.send("You don't have access to the url.");
   }
 };
 
-
 //1st route: create home-page on the server(Get)
 app.get("/", (req, res) => {
-  res.redirect('/login')
+  const currentUser = req.session.user_Id;
+  if (!currentUser)
+  {
+    return res.redirect('/login');
+  } 
+  
+  return res.redirect('/urls');
+
 });
 //creating database as a string
 app.get("/urls.json", (req, res) => {
@@ -95,34 +99,34 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/hello", (req, res) => {
   const templateVars = { greeting: 'Hello World!' };
-  res.render("hello_world", templateVars);
+  return res.render("hello_world", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
   const currentUser = req.session.user_Id;
-  let templateVars = {
+  const templateVars = {
     userId: currentUser,
     user: users[currentUser] || null
   };
     if (currentUser === undefined || currentUser === null) {
-    res.redirect('/login');
+    return res.redirect('/login');
   }
   if (currentUser) {
-    res.render("urls_new", templateVars);
+    return res.render("urls_new", templateVars);
   }
 
 });
 
 app.get("/urls", (req, res) => {
   const currentUser = req.session.user_Id;
-  let templateVars = {
+  const templateVars = {
     user: users[currentUser] || null,
     urls: urlsForUser(currentUser)
   };
   if (currentUser) {
-    res.render("urls_index", templateVars);
+    return res.render("urls_index", templateVars);
   } else {
-    res.send ('User is not logged in.');
+    return res.send ('User is not logged in.');
     // res.redirect('/login');
   }
 });
@@ -140,15 +144,15 @@ app.get("/urls/:shortURL", (req, res) => {
     longURL,
     user
   };
-  res.render("urls_show", templateVars);
+  return res.render("urls_show", templateVars);
 });
 
 app.get('/u/:shortURL', (req, res) => {
   if (!urlDatabase[req.params.shortURL]) {
-    res.send('Error Message - Id does not exist');
+    return res.send('Error Message - Id does not exist');
   }
   const longURL = urlDatabase[req.params.shortURL].longURL;
-  res.redirect(longURL);
+  return res.redirect(longURL);
 });
 
 // Cookie get login
@@ -158,16 +162,16 @@ app.get("/login", (req, res) => {
     user: users[currentUser],
     urls: []
   };
-  res.render("urls_login", templateVars);
+  return res.render("urls_login", templateVars);
 });
 
 // Register
 app.get("/register", (req, res) => {
-  let templateVars = {
+  const templateVars = {
     user: req.session["user_Id"]
   };
 
-  res.render("urls_register", templateVars);
+  return res.render("urls_register", templateVars);
 });
 
 // Login Route 
@@ -177,24 +181,24 @@ app.post("/login", (req, res) => {
   const isAlreadyExists = findUserByEmail(email);
   if (email === '' || password === '') {
     res.status(403);
-    res.send('Please enter Email ID or Password.');
+    return res.send('Please enter Email ID or Password.');
   }
   if (!isAlreadyExists) {
     res.status(403);
-    res.send("User not registered. Please register.");
+    return res.send("User not registered. Please register.");
   }
 
   if (email === isAlreadyExists.email) {
     if (!bcrypt.compareSync(password, isAlreadyExists.password)) {
       res.status(403);
-      res.send("Incorrect Password.");
+      return res.send("Incorrect Password.");
     } else {
       req.session.user_Id = isAlreadyExists.id;
-      res.redirect("/urls");
+      return res.redirect("/urls");
     }
   } else {
     res.status(403);
-    res.send("Incorrect email.");
+    return res.send("Incorrect email.");
   }
 });
 
@@ -203,12 +207,13 @@ app.post("/register", (req, res) => {
   // const password = req.body.password;
   const password = bcrypt.hashSync(req.body.password, 10);
   const alreadyRegistered = findUserByEmail(email);
-  if (email === '' || password === '') {
-    res.status(403);
-    res.send('Please enter Email ID or Password.');
-  }
+  //For better user experience: I implemented attribute:required in input in forms.
+  // if (email === '' || password === '') {
+  //   res.status(403);
+  //   res.send('Please enter Email ID or Password.');
+  // }
   if (!alreadyRegistered) {
-    let userId = generateRandomString();
+    const userId = generateRandomString();
     const addNewUser = {
       id: userId,
       email: email,
@@ -220,13 +225,16 @@ app.post("/register", (req, res) => {
   } 
   if (email === alreadyRegistered?.email) {
     res.status(403);
-    res.send('Already registered.');
+    return res.send('Already registered.');
   }
 });
 
 app.post("/urls", (req, res) => {
   const currentUser = req.session['user_Id'];
-  let shortURL = generateRandomString();
+  if(!currentUser) {
+   return res.send('Please login to access Tiny App');    
+  }
+  const shortURL = generateRandomString();
   const newURL = {
     longURL: req.body.longURL,
     userID: currentUser
@@ -255,7 +263,12 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls");
 });
 //edit button
+
 app.post("/urls/:shortURL", (req, res) => {
+  const currentUser = req.session.user_Id;
+  if(!currentUser) {
+    return res.send('Please login to access Tiny App');    
+   }
   urlOwnership(req, res);
   urlDatabase[req.params.shortURL].longURL = req.body.updatedURL;
   res.redirect("/urls");

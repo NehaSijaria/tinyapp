@@ -129,11 +129,16 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const currentUser = req.session.user_Id;
+  const user = users[currentUser] || null;
+
   urlOwnership(req, res);
+
+  const { shortURL } = req.params;
+  const { longURL   } = urlDatabase[shortURL];
   const templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL].longURL,
-    user: users[currentUser] || null
+    shortURL,
+    longURL,
+    user
   };
   res.render("urls_show", templateVars);
 });

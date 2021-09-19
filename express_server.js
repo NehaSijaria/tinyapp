@@ -255,7 +255,7 @@ app.post("/urls/:id/delete", (req, res) => {
     return res.send("ShortURL doesnot exist.");
   } 
   if (currentUser !== urlObj.userID) {
-    return res.send("User does't have permission to access to the url.");
+    return res.send("User doesn't have permissions to access to the url.");
   }
   // urlOwnership(req, res);
   // const deletedURL = req.params.id;

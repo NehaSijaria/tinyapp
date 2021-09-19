@@ -86,7 +86,7 @@ const urlOwnership = (req, res) => {
 
 //1st route: create home-page on the server(Get)
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.redirect('/login')
 });
 //creating database as a string
 app.get("/urls.json", (req, res) => {
@@ -170,7 +170,11 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const isAlreadyExists = findUserByEmail(email);
-  if (isAlreadyExists === undefined) {
+  if (email === '' || password === '') {
+    res.status(403);
+    res.send('Please enter Email ID or Password.');
+  }
+  if (!isAlreadyExists) {
     res.status(403);
     res.send("User not registered. Please register.");
   }
@@ -190,7 +194,6 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  const name = req.body.name;
   const email = req.body.email;
   // const password = req.body.password;
   const password = bcrypt.hashSync(req.body.password, 10);
@@ -199,7 +202,7 @@ app.post("/register", (req, res) => {
     res.status(403);
     res.send('Please enter Email ID or Password.');
   }
-  if (alreadyRegistered === undefined) {
+  if (!alreadyRegistered) {
     let userId = generateRandomString();
     const addNewUser = {
       id: userId,

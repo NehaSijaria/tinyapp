@@ -195,6 +195,10 @@ app.post("/register", (req, res) => {
   // const password = req.body.password;
   const password = bcrypt.hashSync(req.body.password, 10);
   const alreadyRegistered = findUserByEmail(email);
+  if (email === '' || password === '') {
+    res.status(403);
+    res.send('Please enter Email ID or Password.');
+  }
   if (alreadyRegistered === undefined) {
     let userId = generateRandomString();
     const addNewUser = {
@@ -206,14 +210,7 @@ app.post("/register", (req, res) => {
     req.session.user_Id = userId;
     res.redirect("/urls");
   } 
-  if (email === '' || password === '') {
-    res.status(403);
-    res.send('Please enter Email ID or Password.');
-    // alreadyRegistered could be object or it could be undefined
-    // how do you check if a variable called 'alreadyRegistered' is undefined or not?
-    // if undefined === undefined?
-    // mdn safe operator
-  } else if (email === alreadyRegistered?.email) {
+  if (email === alreadyRegistered?.email) {
     res.status(403);
     res.send('Already registered.');
   }
